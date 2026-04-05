@@ -1,0 +1,81 @@
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { randomUUID } from 'crypto';
+import { Article, ArticleStatus } from './article.entity';
+import { CreateArticleDto } from './dto/create-article.dto';
+import { UpdateArticleDto } from './dto/update-article.dto';
+
+@Injectable()
+export class ArticleService {
+  private articles: Article[] = [];
+
+  findAll(filters: {
+    status?: ArticleStatus;
+    categoryId?: string;
+    tag?: string;
+  }): Article[] {
+    return this.articles.filter((a) => {
+      if (filters.status && a.status !== filters.status) return false;
+      if (filters.categoryId && a.categoryId !== filters.categoryId)
+        return false;
+      if (filters.tag && !a.tags.includes(filters.tag)) return false;
+      return true;
+    });
+  }
+
+  findOne(id: string): Article {
+    const article = this.articles.find((a) => a.id === id);
+    if (!article) throw new NotFoundException(`Article ${id} not found`);
+    return article;
+  }
+
+  create(dto: CreateArticleDto): Article {
+    const now = Date.now();
+    const article: Article = {
+      id: randomUUID(),
+      title: dto.title,
+      content: dto.content,
+      status: dto.status ?? ArticleStatus.DRAFT,
+      authorId: dto.authorId ?? null,
+      categoryId: dto.categoryId ?? null,
+      tags: dto.tags ?? [],
+      createdAt: now,
+      updatedAt: now,
+    };
+    this.articles.push(article);
+    return article;
+  }
+
+  update(id: string, dto: UpdateArticleDto): Article {
+    const article = this.findOne(id);
+    Object.assign(article, { ...dto, updatedAt: Date.now() });
+    return article;
+  }
+
+  remove(id: string): void {
+    const index = this.articles.findIndex((a) => a.id === id);
+    if (index === -1) throw new NotFoundException(`Article ${id} not found`);
+    this.articles.splice(index, 1);
+  }
+
+  nullifyAuthor(authorId: string): void {
+    this.articles
+      .filter((a) => a.authorId === authorId)
+      .forEach((a) => {
+        a.authorId = null;
+        a.updatedAt = Date.now();
+      });
+  }
+
+  nullifyCategory(categoryId: string): void {
+    this.articles
+      .filter((a) => a.categoryId === categoryId)
+      .forEach((a) => {
+        a.categoryId = null;
+        a.updatedAt = Date.now();
+      });
+  }
+
+  exists(id: string): boolean {
+    return this.articles.some((a) => a.id === id);
+  }
+}
