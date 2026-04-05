@@ -1,8 +1,31 @@
+import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import * as dotenv from 'dotenv';
 import { AppModule } from './app.module';
+import { HttpExceptionFilter } from './common/filters/http-exception.filter';
+import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
+
+dotenv.config();
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-  await app.listen(4000);
+
+  app.useGlobalPipes(new ValidationPipe({ whitelist: true }));
+  app.useGlobalFilters(new HttpExceptionFilter());
+  app.useGlobalInterceptors(new LoggingInterceptor());
+
+  const config = new DocumentBuilder()
+    .setTitle('Knowledge Hub API')
+    .setDescription('REST API for Knowledge Hub platform')
+    .setVersion('1.0')
+    .build();
+
+  const document = SwaggerModule.createDocument(app, config);
+  SwaggerModule.setup('doc', app, document);
+
+  const port = process.env.PORT ?? 4000;
+  await app.listen(port);
 }
+
 bootstrap();
