@@ -10,7 +10,6 @@ export class CategoryService {
   private categories: Category[] = [];
 
   constructor(private readonly articleService: ArticleService) {}
-
   findAll(): Category[] {
     return this.categories;
   }
