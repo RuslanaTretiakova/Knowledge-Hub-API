@@ -19,20 +19,6 @@ export class ArticleService {
     private readonly commentService: CommentService,
   ) {}
 
-  findAll(filters: {
-    status?: ArticleStatus;
-    categoryId?: string;
-    tag?: string;
-  }): Article[] {
-    return this.articles.filter((a) => {
-      if (filters.status && a.status !== filters.status) return false;
-      if (filters.categoryId && a.categoryId !== filters.categoryId)
-        return false;
-      if (filters.tag && !a.tags.includes(filters.tag)) return false;
-      return true;
-    });
-  }
-
   findOne(id: string): Article {
     const article = this.articles.find((a) => a.id === id);
     if (!article) throw new NotFoundException(`Article ${id} not found`);
@@ -89,5 +75,63 @@ export class ArticleService {
 
   exists(id: string): boolean {
     return this.articles.some((a) => a.id === id);
+  }
+
+  findAll(filters: {
+    status?: ArticleStatus;
+    categoryId?: string;
+    tag?: string;
+    sortBy?: string;
+    order?: 'asc' | 'desc';
+  }): Article[] {
+    let result = this.articles.filter((a) => {
+      if (filters.status && a.status !== filters.status) return false;
+      if (filters.categoryId && a.categoryId !== filters.categoryId)
+        return false;
+      if (filters.tag && !a.tags.includes(filters.tag)) return false;
+      return true;
+    });
+
+    if (filters.sortBy) {
+      result = [...result].sort((a, b) => {
+        const aVal = (a as any)[filters.sortBy];
+        const bVal = (b as any)[filters.sortBy];
+        if (aVal < bVal) return filters.order === 'desc' ? 1 : -1;
+        if (aVal > bVal) return filters.order === 'desc' ? -1 : 1;
+        return 0;
+      });
+    }
+
+    return result;
+  }
+
+  findAllPaginated(
+    filters: { status?: ArticleStatus; categoryId?: string; tag?: string },
+    page: number = 1,
+    limit: number = 10,
+    sortBy?: string,
+    order: 'asc' | 'desc' = 'asc',
+  ): { data: Article[]; total: number; page: number; limit: number } {
+    let result = this.articles.filter((a) => {
+      if (filters.status && a.status !== filters.status) return false;
+      if (filters.categoryId && a.categoryId !== filters.categoryId)
+        return false;
+      if (filters.tag && !a.tags.includes(filters.tag)) return false;
+      return true;
+    });
+
+    if (sortBy) {
+      result = [...result].sort((a, b) => {
+        const aVal = (a as any)[sortBy];
+        const bVal = (b as any)[sortBy];
+        if (aVal < bVal) return order === 'desc' ? 1 : -1;
+        if (aVal > bVal) return order === 'desc' ? -1 : 1;
+        return 0;
+      });
+    }
+
+    const total = result.length;
+    const start = (page - 1) * limit;
+    return { data: result.slice(start, start + limit), total, page, limit };
   }
 }
