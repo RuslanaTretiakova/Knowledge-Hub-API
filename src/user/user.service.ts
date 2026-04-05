@@ -4,6 +4,8 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { randomUUID } from 'crypto';
+import { ArticleService } from '../article/article.service';
+import { CommentService } from '../comment/comment.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdatePasswordDto } from './dto/update-password.dto';
 import { User, UserRole } from './user.entity';
@@ -11,6 +13,11 @@ import { User, UserRole } from './user.entity';
 @Injectable()
 export class UserService {
   private users: User[] = [];
+
+  constructor(
+    private readonly articleService: ArticleService,
+    private readonly commentService: CommentService,
+  ) {}
 
   findAll(): Omit<User, 'password'>[] {
     return this.users.map(this.stripPassword);
@@ -49,6 +56,8 @@ export class UserService {
     const index = this.users.findIndex((u) => u.id === id);
     if (index === -1) throw new NotFoundException(`User ${id} not found`);
     this.users.splice(index, 1);
+    this.articleService.nullifyAuthor(id);
+    this.commentService.deleteByAuthor(id);
   }
 
   findRaw(id: string): User {
@@ -58,7 +67,8 @@ export class UserService {
   }
 
   private stripPassword(user: User): Omit<User, 'password'> {
-    const { password, ...rest } = user;
-    return rest;
+    return Object.fromEntries(
+      Object.entries(user).filter(([key]) => key !== 'password'),
+    ) as Omit<User, 'password'>;
   }
 }

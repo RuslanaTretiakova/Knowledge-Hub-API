@@ -1,7 +1,9 @@
 import {
+  Inject,
   Injectable,
   NotFoundException,
   UnprocessableEntityException,
+  forwardRef,
 } from '@nestjs/common';
 import { randomUUID } from 'crypto';
 import { ArticleService } from '../article/article.service';
@@ -12,7 +14,10 @@ import { CreateCommentDto } from './dto/create-comment.dto';
 export class CommentService {
   private comments: Comment[] = [];
 
-  constructor(private readonly articleService: ArticleService) {}
+  constructor(
+    @Inject(forwardRef(() => ArticleService))
+    private readonly articleService: ArticleService,
+  ) {}
 
   findByArticle(articleId: string): Comment[] {
     return this.comments.filter((c) => c.articleId === articleId);
