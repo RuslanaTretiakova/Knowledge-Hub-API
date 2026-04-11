@@ -119,3 +119,13 @@ npm run format
 Press <kbd>F5</kbd> to debug.
 
 For more information, visit: https://code.visualstudio.com/docs/editor/debugging
+
+## Docker Hub
+
+Docker image is available at: https://hub.docker.com/r/ruslanatretiakova/nodejs-2026q1-knowledge-hub
+
+### Pull and run
+
+```bash
+docker pull ruslanatretiakova/nodejs-2026q1-knowledge-hub:latest
+```
