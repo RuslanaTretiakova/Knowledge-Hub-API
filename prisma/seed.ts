@@ -1,4 +1,4 @@
-import { PrismaClient, UserRole, ArticleStatus } from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
@@ -9,7 +9,7 @@ async function main() {
     create: {
       login: 'admin',
       password: 'admin123',
-      role: UserRole.ADMIN,
+      role: 'ADMIN',
     },
   });
 
@@ -19,18 +19,16 @@ async function main() {
     create: {
       login: 'editor',
       password: 'editor123',
-      role: UserRole.EDITOR,
+      role: 'EDITOR',
     },
   });
 
   const cat1 = await prisma.category.create({
     data: { name: 'Technology', description: 'Tech articles' },
   });
-
   const cat2 = await prisma.category.create({
     data: { name: 'Science', description: 'Science articles' },
   });
-
   const cat3 = await prisma.category.create({
     data: { name: 'Programming', description: 'Programming articles' },
   });
@@ -67,7 +65,7 @@ async function main() {
     data: {
       title: 'Getting Started with NestJS',
       content: 'NestJS is a framework for building server-side applications.',
-      status: ArticleStatus.PUBLISHED,
+      status: 'PUBLISHED',
       authorId: admin.id,
       categoryId: cat3.id,
       tags: {
@@ -80,40 +78,40 @@ async function main() {
     data: {
       title: 'Docker for Beginners',
       content: 'Docker is a platform for containerizing applications.',
-      status: ArticleStatus.PUBLISHED,
+      status: 'PUBLISHED',
       authorId: editor.id,
       categoryId: cat1.id,
       tags: { connect: [{ id: tags[2].id }] },
     },
   });
 
-  const article3 = await prisma.article.create({
+  await prisma.article.create({
     data: {
       title: 'Prisma ORM Guide',
       content: 'Prisma is a next-generation ORM for Node.js.',
-      status: ArticleStatus.DRAFT,
+      status: 'DRAFT',
       authorId: admin.id,
       categoryId: cat3.id,
       tags: { connect: [{ id: tags[3].id }, { id: tags[1].id }] },
     },
   });
 
-  const article4 = await prisma.article.create({
+  await prisma.article.create({
     data: {
       title: 'TypeScript Best Practices',
       content: 'TypeScript adds static typing to JavaScript.',
-      status: ArticleStatus.PUBLISHED,
+      status: 'PUBLISHED',
       authorId: editor.id,
       categoryId: cat3.id,
       tags: { connect: [{ id: tags[1].id }] },
     },
   });
 
-  const article5 = await prisma.article.create({
+  await prisma.article.create({
     data: {
       title: 'Science of Computing',
       content: 'Computing science fundamentals.',
-      status: ArticleStatus.ARCHIVED,
+      status: 'ARCHIVED',
       authorId: admin.id,
       categoryId: cat2.id,
       tags: { connect: [{ id: tags[0].id }] },
