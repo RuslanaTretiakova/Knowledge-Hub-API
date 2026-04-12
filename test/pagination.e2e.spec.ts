@@ -2,7 +2,6 @@ import { request } from './lib';
 import { StatusCodes } from 'http-status-codes';
 import { articlesRoutes } from './endpoints';
 
-
 const createArticleDto = (title: string, status = 'draft') => ({
   title,
   content: 'Test content',
