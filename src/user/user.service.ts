@@ -49,7 +49,14 @@ export class UserService {
   async remove(id: string) {
     const user = await this.prisma.user.findUnique({ where: { id } });
     if (!user) throw new NotFoundException(`User ${id} not found`);
-    await this.prisma.user.delete({ where: { id } });
+    await this.prisma.$transaction([
+      this.prisma.comment.deleteMany({ where: { authorId: id } }),
+      this.prisma.article.updateMany({
+        where: { authorId: id },
+        data: { authorId: null },
+      }),
+      this.prisma.user.delete({ where: { id } }),
+    ]);
   }
 
   private stripPassword(user: any) {
