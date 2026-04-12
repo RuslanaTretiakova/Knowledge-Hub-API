@@ -53,8 +53,11 @@ export class UserService {
   }
 
   private stripPassword(user: any) {
-    return Object.fromEntries(
-      Object.entries(user).filter(([key]) => key !== 'password'),
-    );
+    const result = { ...user };
+    delete result.password;
+    result.role = result.role?.toLowerCase();
+    result.createdAt = new Date(result.createdAt).getTime();
+    result.updatedAt = new Date(result.updatedAt).getTime();
+    return result;
   }
 }

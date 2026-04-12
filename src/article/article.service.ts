@@ -16,7 +16,7 @@ export class ArticleService {
     order?: 'asc' | 'desc';
   }) {
     const where: any = {};
-    if (filters.status) where.status = filters.status;
+    if (filters.status) where.status = filters.status.toUpperCase();
     if (filters.categoryId) where.categoryId = filters.categoryId;
     if (filters.tag) where.tags = { some: { name: filters.tag } };
 
@@ -41,7 +41,7 @@ export class ArticleService {
     order: 'asc' | 'desc' = 'asc',
   ) {
     const where: any = {};
-    if (filters.status) where.status = filters.status;
+    if (filters.status) where.status = filters.status.toUpperCase();
     if (filters.categoryId) where.categoryId = filters.categoryId;
     if (filters.tag) where.tags = { some: { name: filters.tag } };
 
@@ -75,7 +75,7 @@ export class ArticleService {
       data: {
         title: dto.title,
         content: dto.content,
-        status: (dto.status as any) ?? 'DRAFT',
+        status: dto.status ? (dto.status.toUpperCase() as any) : 'DRAFT',
         authorId: dto.authorId ?? null,
         categoryId: dto.categoryId ?? null,
         tags: dto.tags?.length
@@ -101,7 +101,7 @@ export class ArticleService {
       data: {
         ...(dto.title && { title: dto.title }),
         ...(dto.content && { content: dto.content }),
-        ...(dto.status && { status: dto.status as any }),
+        ...(dto.status && { status: dto.status.toUpperCase() as any }),
         ...(dto.authorId !== undefined && { authorId: dto.authorId }),
         ...(dto.categoryId !== undefined && { categoryId: dto.categoryId }),
         ...(dto.tags && {
@@ -131,9 +131,11 @@ export class ArticleService {
   }
 
   private formatArticle(article: any) {
-    return {
-      ...article,
-      tags: article.tags?.map((t: any) => t.name) ?? [],
-    };
+    const result = { ...article };
+    result.status = result.status?.toLowerCase();
+    result.tags = article.tags?.map((t: any) => t.name) ?? [];
+    result.createdAt = new Date(result.createdAt).getTime();
+    result.updatedAt = new Date(result.updatedAt).getTime();
+    return result;
   }
 }
