@@ -45,4 +45,14 @@ export class AuthController {
     }
     return this.authService.refresh({ refreshToken: body.refreshToken });
   }
+
+  @Post('logout')
+  @HttpCode(200)
+  @ApiOperation({ summary: 'Logout' })
+  async logout(@Body() body: any) {
+    if (!body?.refreshToken) {
+      throw new UnauthorizedException('Refresh token is required');
+    }
+    return this.authService.logout(body.refreshToken);
+  }
 }

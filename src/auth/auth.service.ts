@@ -24,12 +24,10 @@ export class AuthService {
 
     if (!user) {
       const hashedPassword = await bcrypt.hash(dto.password, 10);
-
       const adminExists = await this.prisma.user.findFirst({
         where: { role: 'ADMIN' },
       });
       const role = adminExists ? 'VIEWER' : 'ADMIN';
-
       user = await this.prisma.user.create({
         data: {
           login: dto.login,
@@ -70,6 +68,13 @@ export class AuthService {
       throw new UnauthorizedException('Refresh token is required');
     }
 
+    const revoked = await this.prisma.revokedToken.findUnique({
+      where: { token: dto.refreshToken },
+    });
+    if (revoked) {
+      throw new ForbiddenException('Token has been revoked');
+    }
+
     try {
       const payload = this.jwtService.verify(dto.refreshToken, {
         secret: process.env.JWT_REFRESH_SECRET,
@@ -87,6 +92,26 @@ export class AuthService {
     } catch {
       throw new ForbiddenException('Invalid or expired refresh token');
     }
+  }
+
+  async logout(refreshToken: string) {
+    if (!refreshToken) {
+      throw new UnauthorizedException('Refresh token is required');
+    }
+
+    try {
+      this.jwtService.verify(refreshToken, {
+        secret: process.env.JWT_REFRESH_SECRET,
+      });
+    } catch {
+      throw new ForbiddenException('Invalid or expired refresh token');
+    }
+
+    await this.prisma.revokedToken.create({
+      data: { token: refreshToken },
+    });
+
+    return { message: 'Logged out successfully' };
   }
 
   private generateTokens(user: { id: string; login: string; role: string }) {
