@@ -1,12 +1,15 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Delete,
+  ForbiddenException,
   Get,
   HttpCode,
   Param,
   Post,
   Put,
+  Request,
 } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { ParseUuidPipe } from '../common/pipes/parse-uuid.pipe';
@@ -34,23 +37,50 @@ export class UserController {
   @Post()
   @HttpCode(201)
   @ApiOperation({ summary: 'Create user' })
-  create(@Body() dto: CreateUserDto) {
+  create(@Body() dto: CreateUserDto, @Request() req: any) {
+    const role = req.user?.role?.toUpperCase();
+    if (role !== 'ADMIN')
+      throw new ForbiddenException('Only admins can create users');
     return this.userService.create(dto);
   }
 
   @Put(':id')
-  @ApiOperation({ summary: 'Update user password' })
-  updatePassword(
+  @ApiOperation({ summary: 'Update user' })
+  async update(
     @Param('id', ParseUuidPipe) id: string,
-    @Body() dto: UpdatePasswordDto,
+    @Body() body: any,
+    @Request() req: any,
   ) {
-    return this.userService.updatePassword(id, dto);
+    const currentUser = req.user;
+    const isAdmin = currentUser?.role?.toUpperCase() === 'ADMIN';
+
+    if (body.role !== undefined) {
+      if (!isAdmin) {
+        throw new ForbiddenException('Only admin can change roles');
+      }
+      return this.userService.updateRole(id, body.role);
+    }
+
+    if (!body.oldPassword || !body.newPassword) {
+      throw new BadRequestException('oldPassword and newPassword are required');
+    }
+
+    if (!isAdmin && currentUser?.userId !== id) {
+      throw new ForbiddenException('You can only update your own password');
+    }
+
+    return this.userService.updatePassword(id, body as UpdatePasswordDto);
   }
 
   @Delete(':id')
   @HttpCode(204)
   @ApiOperation({ summary: 'Delete user' })
-  remove(@Param('id', ParseUuidPipe) id: string) {
+  async remove(@Param('id', ParseUuidPipe) id: string, @Request() req: any) {
+    const currentUser = req.user;
+    const isAdmin = currentUser?.role?.toUpperCase() === 'ADMIN';
+    if (!isAdmin && currentUser?.userId !== id) {
+      throw new ForbiddenException('Insufficient permissions');
+    }
     return this.userService.remove(id);
   }
 }

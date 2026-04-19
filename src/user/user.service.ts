@@ -1,8 +1,10 @@
 import {
+  BadRequestException,
   ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import * as bcrypt from 'bcryptjs';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdatePasswordDto } from './dto/update-password.dto';
@@ -23,10 +25,18 @@ export class UserService {
   }
 
   async create(dto: CreateUserDto) {
+    const existing = await this.prisma.user.findUnique({
+      where: { login: dto.login },
+    });
+    if (existing) {
+      throw new BadRequestException('Login already taken');
+    }
+
+    const hashedPassword = await bcrypt.hash(dto.password, 10);
     const user = await this.prisma.user.create({
       data: {
         login: dto.login,
-        password: dto.password,
+        password: hashedPassword,
         role: (dto.role as any) ?? 'VIEWER',
       },
     });
@@ -36,12 +46,24 @@ export class UserService {
   async updatePassword(id: string, dto: UpdatePasswordDto) {
     const user = await this.prisma.user.findUnique({ where: { id } });
     if (!user) throw new NotFoundException(`User ${id} not found`);
-    if (user.password !== dto.oldPassword) {
-      throw new ForbiddenException('Old password is incorrect');
-    }
+
+    const isMatch = await bcrypt.compare(dto.oldPassword, user.password);
+    if (!isMatch) throw new ForbiddenException('Old password is incorrect');
+
+    const hashedPassword = await bcrypt.hash(dto.newPassword, 10);
     const updated = await this.prisma.user.update({
       where: { id },
-      data: { password: dto.newPassword },
+      data: { password: hashedPassword },
+    });
+    return this.stripPassword(updated);
+  }
+
+  async updateRole(id: string, role: string) {
+    const user = await this.prisma.user.findUnique({ where: { id } });
+    if (!user) throw new NotFoundException(`User ${id} not found`);
+    const updated = await this.prisma.user.update({
+      where: { id },
+      data: { role: role.toUpperCase() as any },
     });
     return this.stripPassword(updated);
   }

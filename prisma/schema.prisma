@@ -72,3 +72,9 @@ model Comment {
   author    User?    @relation(fields: [authorId], references: [id], onDelete: Cascade)
   authorId  String?
 }
+
+model RevokedToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  createdAt DateTime @default(now())
+}
