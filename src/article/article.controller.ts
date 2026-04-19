@@ -10,6 +10,7 @@ import {
   Query,
 } from '@nestjs/common';
 import { ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
+import { Public } from '../auth/decorators/public.decorator';
 import { ParseUuidPipe } from '../common/pipes/parse-uuid.pipe';
 import { ArticleService } from './article.service';
 import { ArticleStatus } from './article.entity';
@@ -44,6 +45,7 @@ export class ArticleController {
     });
   }
 
+  @Public()
   @Get('paginated')
   @ApiOperation({ summary: 'Get articles with pagination and sorting' })
   @ApiQuery({ name: 'page', required: false })
