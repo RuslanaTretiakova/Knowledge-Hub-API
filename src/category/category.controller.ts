@@ -2,11 +2,13 @@ import {
   Body,
   Controller,
   Delete,
+  ForbiddenException,
   Get,
   HttpCode,
   Param,
   Post,
   Put,
+  Request,
 } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { ParseUuidPipe } from '../common/pipes/parse-uuid.pipe';
@@ -34,7 +36,10 @@ export class CategoryController {
   @Post()
   @HttpCode(201)
   @ApiOperation({ summary: 'Create category' })
-  create(@Body() dto: CreateCategoryDto) {
+  create(@Body() dto: CreateCategoryDto, @Request() req: any) {
+    const role = req.user?.role?.toUpperCase();
+    if (role !== 'ADMIN')
+      throw new ForbiddenException('Only admins can create categories');
     return this.categoryService.create(dto);
   }
 
@@ -43,14 +48,21 @@ export class CategoryController {
   update(
     @Param('id', ParseUuidPipe) id: string,
     @Body() dto: UpdateCategoryDto,
+    @Request() req: any,
   ) {
+    const role = req.user?.role?.toUpperCase();
+    if (role !== 'ADMIN')
+      throw new ForbiddenException('Only admins can update categories');
     return this.categoryService.update(id, dto);
   }
 
   @Delete(':id')
   @HttpCode(204)
   @ApiOperation({ summary: 'Delete category' })
-  remove(@Param('id', ParseUuidPipe) id: string) {
+  remove(@Param('id', ParseUuidPipe) id: string, @Request() req: any) {
+    const role = req.user?.role?.toUpperCase();
+    if (role !== 'ADMIN')
+      throw new ForbiddenException('Only admins can delete categories');
     return this.categoryService.remove(id);
   }
 }

@@ -24,11 +24,17 @@ export class AuthService {
 
     if (!user) {
       const hashedPassword = await bcrypt.hash(dto.password, 10);
+
+      const adminExists = await this.prisma.user.findFirst({
+        where: { role: 'ADMIN' },
+      });
+      const role = adminExists ? 'VIEWER' : 'ADMIN';
+
       user = await this.prisma.user.create({
         data: {
           login: dto.login,
           password: hashedPassword,
-          role: 'VIEWER',
+          role: role as any,
         },
       });
     }
@@ -87,7 +93,7 @@ export class AuthService {
     const payload = {
       userId: user.id,
       login: user.login,
-      role: user.role,
+      role: user.role.toLowerCase(),
     };
 
     const accessToken = this.jwtService.sign(payload, {

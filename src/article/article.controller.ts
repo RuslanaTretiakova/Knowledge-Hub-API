@@ -2,12 +2,14 @@ import {
   Body,
   Controller,
   Delete,
+  ForbiddenException,
   Get,
   HttpCode,
   Param,
   Post,
   Put,
   Query,
+  Request,
 } from '@nestjs/common';
 import { ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { Public } from '../auth/decorators/public.decorator';
@@ -82,23 +84,33 @@ export class ArticleController {
   @Post()
   @HttpCode(201)
   @ApiOperation({ summary: 'Create article' })
-  create(@Body() dto: CreateArticleDto) {
+  create(@Body() dto: CreateArticleDto, @Request() req: any) {
+    const role = req.user?.role?.toUpperCase();
+    if (role === 'VIEWER')
+      throw new ForbiddenException('Viewers cannot create articles');
     return this.articleService.create(dto);
   }
 
   @Put(':id')
   @ApiOperation({ summary: 'Update article' })
-  update(
+  async update(
     @Param('id', ParseUuidPipe) id: string,
     @Body() dto: UpdateArticleDto,
+    @Request() req: any,
   ) {
+    const role = req.user?.role?.toUpperCase();
+    if (role === 'VIEWER')
+      throw new ForbiddenException('Viewers cannot update articles');
     return this.articleService.update(id, dto);
   }
 
   @Delete(':id')
   @HttpCode(204)
   @ApiOperation({ summary: 'Delete article' })
-  remove(@Param('id', ParseUuidPipe) id: string) {
+  async remove(@Param('id', ParseUuidPipe) id: string, @Request() req: any) {
+    const role = req.user?.role?.toUpperCase();
+    if (role !== 'ADMIN')
+      throw new ForbiddenException('Only admins can delete articles');
     return this.articleService.remove(id);
   }
 }
