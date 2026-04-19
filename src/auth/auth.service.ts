@@ -1,5 +1,4 @@
 import {
-  BadRequestException,
   ForbiddenException,
   Injectable,
   UnauthorizedException,
@@ -19,22 +18,20 @@ export class AuthService {
   ) {}
 
   async signup(dto: SignupDto) {
-    const existing = await this.prisma.user.findUnique({
+    let user = await this.prisma.user.findUnique({
       where: { login: dto.login },
     });
-    if (existing) {
-      throw new BadRequestException('Login already taken');
+
+    if (!user) {
+      const hashedPassword = await bcrypt.hash(dto.password, 10);
+      user = await this.prisma.user.create({
+        data: {
+          login: dto.login,
+          password: hashedPassword,
+          role: 'VIEWER',
+        },
+      });
     }
-
-    const hashedPassword = await bcrypt.hash(dto.password, 10);
-
-    const user = await this.prisma.user.create({
-      data: {
-        login: dto.login,
-        password: hashedPassword,
-        role: 'VIEWER',
-      },
-    });
 
     return {
       id: user.id,
