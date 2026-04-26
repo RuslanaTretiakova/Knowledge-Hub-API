@@ -62,7 +62,10 @@ describe('AuthService', () => {
         updatedAt: new Date(),
       });
 
-      const result = await service.signup({ login: 'viewer', password: 'pass' });
+      const result = await service.signup({
+        login: 'viewer',
+        password: 'pass',
+      });
 
       expect(result.role).toBe('viewer');
       expect(mockPrisma.user.create).toHaveBeenCalledWith(
@@ -137,7 +140,10 @@ describe('AuthService', () => {
         role: 'VIEWER',
       });
 
-      const result = await service.login({ login: 'user', password: 'password' });
+      const result = await service.login({
+        login: 'user',
+        password: 'password',
+      });
 
       expect(result).toHaveProperty('accessToken');
       expect(result).toHaveProperty('refreshToken');
@@ -183,9 +189,9 @@ describe('AuthService', () => {
     });
 
     it('should throw UnauthorizedException if no refresh token', async () => {
-      await expect(
-        service.refresh({ refreshToken: '' }),
-      ).rejects.toThrow(UnauthorizedException);
+      await expect(service.refresh({ refreshToken: '' })).rejects.toThrow(
+        UnauthorizedException,
+      );
     });
 
     it('should throw ForbiddenException if token is revoked', async () => {
