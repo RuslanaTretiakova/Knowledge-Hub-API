@@ -185,6 +185,49 @@ describe('ArticleService', () => {
     });
   });
 
+  describe('formatArticle', () => {
+    it('should default tags to an empty array when missing', async () => {
+      mockPrisma.article.create.mockResolvedValue({
+        id: '1',
+        title: 'Test',
+        content: 'Content',
+        status: 'DRAFT',
+        authorId: null,
+        categoryId: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+
+      const result = await service.create({
+        title: 'Test',
+        content: 'Content',
+      });
+
+      expect(result.tags).toEqual([]);
+    });
+
+    it('should default status to DRAFT when status not provided', async () => {
+      mockPrisma.article.create.mockResolvedValue({
+        id: '1',
+        title: 'Test',
+        content: 'Content',
+        status: 'DRAFT',
+        authorId: null,
+        categoryId: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+
+      await service.create({
+        title: 'Test',
+        content: 'Content',
+      });
+
+      const createCall = mockPrisma.article.create.mock.calls[0][0];
+      expect(createCall.data.status).toBe('DRAFT');
+    });
+  });
+
   describe('update', () => {
     it('should update article', async () => {
       mockPrisma.article.findUnique.mockResolvedValue({
@@ -219,12 +262,81 @@ describe('ArticleService', () => {
       expect(result.status).toBe('published');
     });
 
+    it('should replace tags when provided', async () => {
+      mockPrisma.article.findUnique.mockResolvedValue({
+        id: '1',
+        title: 'Old',
+        content: 'Old',
+        status: 'DRAFT',
+        tags: [],
+        authorId: null,
+        categoryId: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+      mockPrisma.article.update.mockResolvedValue({
+        id: '1',
+        title: 'Old',
+        content: 'Old',
+        status: 'DRAFT',
+        tags: [{ name: 'nodejs' }],
+        authorId: null,
+        categoryId: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+
+      await service.update('1', { tags: ['nodejs'] });
+
+      const updateCall = mockPrisma.article.update.mock.calls[0][0];
+      expect(updateCall.data.tags).toEqual({
+        set: [],
+        connectOrCreate: [
+          {
+            where: { name: 'nodejs' },
+            create: { name: 'nodejs' },
+          },
+        ],
+      });
+    });
+
     it('should throw NotFoundException if article not found', async () => {
       mockPrisma.article.findUnique.mockResolvedValue(null);
 
       await expect(
         service.update('uuid', { title: 'New', content: 'New' }),
       ).rejects.toThrow(NotFoundException);
+    });
+
+    it('should update author and category when provided', async () => {
+      mockPrisma.article.findUnique.mockResolvedValue({
+        id: '1',
+        title: 'Old',
+        content: 'Old',
+        status: 'DRAFT',
+        tags: [],
+        authorId: null,
+        categoryId: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+      mockPrisma.article.update.mockResolvedValue({
+        id: '1',
+        title: 'Old',
+        content: 'Old',
+        status: 'DRAFT',
+        tags: [],
+        authorId: 'auth',
+        categoryId: 'cat',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+
+      await service.update('1', { authorId: 'auth', categoryId: 'cat' });
+
+      const updateCall = mockPrisma.article.update.mock.calls[0][0];
+      expect(updateCall.data.authorId).toBe('auth');
+      expect(updateCall.data.categoryId).toBe('cat');
     });
   });
 
@@ -252,6 +364,24 @@ describe('ArticleService', () => {
       mockPrisma.article.findUnique.mockResolvedValue(null);
 
       await expect(service.remove('uuid')).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe('exists', () => {
+    it('should return true when the article exists', async () => {
+      mockPrisma.article.findUnique.mockResolvedValue({ id: '1' });
+
+      const result = await service.exists('1');
+
+      expect(result).toBe(true);
+    });
+
+    it('should return false when the article does not exist', async () => {
+      mockPrisma.article.findUnique.mockResolvedValue(null);
+
+      const result = await service.exists('uuid');
+
+      expect(result).toBe(false);
     });
   });
 

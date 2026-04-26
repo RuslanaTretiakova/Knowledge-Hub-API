@@ -36,7 +36,9 @@ describe('LoggingInterceptor', () => {
   });
 
   it('should call next.handle()', async () => {
-    await lastValueFrom(interceptor.intercept(createContext() as any, mockNext as any));
+    await lastValueFrom(
+      interceptor.intercept(createContext() as any, mockNext as any),
+    );
     expect(mockNext.handle).toHaveBeenCalled();
   });
 
@@ -47,6 +49,20 @@ describe('LoggingInterceptor', () => {
     expect(data).toEqual({ data: 'test' });
   });
 
+  it('should log request and response details', async () => {
+    await lastValueFrom(
+      interceptor.intercept(createContext() as any, mockNext as any),
+    );
+
+    expect(mockLogger.logRequest).toHaveBeenCalledWith('GET', '/test', {}, {});
+    expect(mockLogger.logResponse).toHaveBeenCalledWith(
+      'GET',
+      '/test',
+      200,
+      expect.any(Number),
+    );
+  });
+
   it('should sanitize password in request body', async () => {
     const contextWithPassword = createContext({
       method: 'POST',
@@ -54,6 +70,8 @@ describe('LoggingInterceptor', () => {
       body: { login: 'user', password: 'secret' },
     });
 
-    await lastValueFrom(interceptor.intercept(contextWithPassword as any, mockNext as any));
+    await lastValueFrom(
+      interceptor.intercept(contextWithPassword as any, mockNext as any),
+    );
   });
 });

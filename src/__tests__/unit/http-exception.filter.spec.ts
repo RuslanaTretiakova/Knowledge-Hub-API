@@ -1,13 +1,21 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { HttpException, HttpStatus } from '@nestjs/common';
 import { AppLogger } from '../../common/logger/app-logger.service';
+import {
+  ForbiddenError,
+  NotFoundError,
+  UnauthorizedError,
+  ValidationError,
+} from '../../common/errors/custom-errors';
 import { HttpExceptionFilter } from '../../common/filters/http-exception.filter';
 
 const createContext = () => {
   const mockJson = vi.fn();
   const mockStatus = vi.fn().mockReturnValue({ json: mockJson });
   const mockGetResponse = vi.fn().mockReturnValue({ status: mockStatus });
-  const mockGetRequest = vi.fn().mockReturnValue({ url: '/test', method: 'GET' });
+  const mockGetRequest = vi
+    .fn()
+    .mockReturnValue({ url: '/test', method: 'GET' });
 
   return {
     context: {
@@ -64,6 +72,66 @@ describe('HttpExceptionFilter', () => {
     expect(mockJson).toHaveBeenCalledWith(
       expect.objectContaining({
         statusCode: HttpStatus.FORBIDDEN,
+      }),
+    );
+  });
+
+  it('should handle NotFoundError', () => {
+    const { context, mockStatus, mockJson } = createContext();
+    const exception = new NotFoundError('resource missing');
+
+    filter.catch(exception, context as any);
+
+    expect(mockStatus).toHaveBeenCalledWith(404);
+    expect(mockJson).toHaveBeenCalledWith(
+      expect.objectContaining({
+        statusCode: 404,
+        message: 'resource missing',
+      }),
+    );
+  });
+
+  it('should handle ValidationError', () => {
+    const { context, mockStatus, mockJson } = createContext();
+    const exception = new ValidationError('validation failed');
+
+    filter.catch(exception, context as any);
+
+    expect(mockStatus).toHaveBeenCalledWith(400);
+    expect(mockJson).toHaveBeenCalledWith(
+      expect.objectContaining({
+        statusCode: 400,
+        message: 'validation failed',
+      }),
+    );
+  });
+
+  it('should handle UnauthorizedError', () => {
+    const { context, mockStatus, mockJson } = createContext();
+    const exception = new UnauthorizedError('not allowed');
+
+    filter.catch(exception, context as any);
+
+    expect(mockStatus).toHaveBeenCalledWith(401);
+    expect(mockJson).toHaveBeenCalledWith(
+      expect.objectContaining({
+        statusCode: 401,
+        message: 'not allowed',
+      }),
+    );
+  });
+
+  it('should handle ForbiddenError', () => {
+    const { context, mockStatus, mockJson } = createContext();
+    const exception = new ForbiddenError('forbidden action');
+
+    filter.catch(exception, context as any);
+
+    expect(mockStatus).toHaveBeenCalledWith(403);
+    expect(mockJson).toHaveBeenCalledWith(
+      expect.objectContaining({
+        statusCode: 403,
+        message: 'forbidden action',
       }),
     );
   });
