@@ -8,7 +8,6 @@ const getUserTokenByRole = async (
   const login = `TEST_RBAC_${role.toUpperCase()}_${Date.now()}`;
   const password = 'TestPass123!';
 
-  // Create user via signup
   const signupResponse = await request
     .post(authRoutes.signup)
     .set({ Accept: 'application/json' })
@@ -20,7 +19,6 @@ const getUserTokenByRole = async (
     throw new Error(`Failed to create ${role} user`);
   }
 
-  // If role is not 'viewer' (default), update user role via admin
   if (role !== 'viewer') {
     const updateRoleResponse = await request
       .put(usersRoutes.update(userId))
@@ -32,7 +30,6 @@ const getUserTokenByRole = async (
     }
   }
 
-  // Login to get tokens
   const loginResponse = await request
     .post(authRoutes.login)
     .set({ Accept: 'application/json' })
