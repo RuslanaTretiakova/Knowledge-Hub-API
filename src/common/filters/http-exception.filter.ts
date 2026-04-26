@@ -4,9 +4,9 @@ import {
   ExceptionFilter,
   HttpException,
   HttpStatus,
-  Logger,
 } from '@nestjs/common';
 import { Request, Response } from 'express';
+import { AppLogger } from '../logger/app-logger.service';
 import {
   ForbiddenError,
   NotFoundError,
@@ -16,7 +16,7 @@ import {
 
 @Catch()
 export class HttpExceptionFilter implements ExceptionFilter {
-  private readonly logger = new Logger(HttpExceptionFilter.name);
+  constructor(private readonly logger: AppLogger) {}
 
   catch(exception: unknown, host: ArgumentsHost) {
     const ctx = host.switchToHttp();
@@ -33,37 +33,39 @@ export class HttpExceptionFilter implements ExceptionFilter {
       if (typeof res === 'string') {
         message = res;
       } else if (typeof res === 'object' && res !== null) {
-        message = (res as any).message || message;
-        error = (res as any).error || error;
+        const responseMessage = (res as any).message;
+        if (Array.isArray(responseMessage)) {
+          message = responseMessage.join(', ');
+        } else {
+          message = responseMessage ?? message;
+        }
+        error = (res as any).error ?? error;
       }
       error = this.getErrorName(statusCode);
     } else if (exception instanceof NotFoundError) {
-      statusCode = 404;
+      statusCode = exception.statusCode;
       message = exception.message;
-      error = 'Not Found';
+      error = this.getErrorName(statusCode);
     } else if (exception instanceof ValidationError) {
-      statusCode = 400;
+      statusCode = exception.statusCode;
       message = exception.message;
-      error = 'Bad Request';
+      error = this.getErrorName(statusCode);
     } else if (exception instanceof UnauthorizedError) {
-      statusCode = 401;
+      statusCode = exception.statusCode;
       message = exception.message;
-      error = 'Unauthorized';
+      error = this.getErrorName(statusCode);
     } else if (exception instanceof ForbiddenError) {
-      statusCode = 403;
+      statusCode = exception.statusCode;
       message = exception.message;
-      error = 'Forbidden';
-    } else if (exception instanceof Error) {
-      this.logger.error(
-        `Unhandled error: ${exception.message}`,
-        exception.stack,
-      );
+      error = this.getErrorName(statusCode);
     }
 
-    if (statusCode >= 500) {
+    const trace = exception instanceof Error ? exception.stack : undefined;
+    if (trace) {
       this.logger.error(
         `${request.method} ${request.url} ${statusCode}`,
-        exception instanceof Error ? exception.stack : String(exception),
+        trace,
+        HttpExceptionFilter.name,
       );
     }
 
