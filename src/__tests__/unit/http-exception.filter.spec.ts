@@ -33,10 +33,6 @@ const createContext = () => {
   };
 };
 
-const mockLogger: Partial<AppLogger> = {
-  error: vi.fn(),
-};
-
 describe('HttpExceptionFilter', () => {
   let mockLogger: Partial<AppLogger>;
   let filter: HttpExceptionFilter;
