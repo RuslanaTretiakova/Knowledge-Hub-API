@@ -1,4 +1,5 @@
 import { request } from './lib';
+import { startE2eApp, stopE2eApp } from './lib/register-e2e-app';
 import { StatusCodes } from 'http-status-codes';
 import { articlesRoutes } from './endpoints';
 
@@ -17,6 +18,7 @@ describe('Pagination and Sorting (e2e)', () => {
   const createdIds: string[] = [];
 
   beforeAll(async () => {
+    await startE2eApp();
     const articles = [
       'ARTICLE_A',
       'ARTICLE_B',
@@ -31,7 +33,7 @@ describe('Pagination and Sorting (e2e)', () => {
         .send(createArticleDto(title));
       createdIds.push(response.body.id);
     }
-  });
+  }, 120_000);
 
   afterAll(async () => {
     for (const id of createdIds) {
@@ -39,6 +41,7 @@ describe('Pagination and Sorting (e2e)', () => {
         .delete(articlesRoutes.delete(id))
         .set(commonHeaders);
     }
+    await stopE2eApp();
   });
 
   describe('GET /article/paginated', () => {

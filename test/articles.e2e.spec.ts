@@ -1,4 +1,5 @@
 import { request } from './lib';
+import { startE2eApp, stopE2eApp } from './lib/register-e2e-app';
 import { StatusCodes } from 'http-status-codes';
 import { validate } from 'uuid';
 import {
@@ -31,12 +32,13 @@ describe('Article (e2e)', () => {
   let mockUserId: string | undefined;
 
   beforeAll(async () => {
+    await startE2eApp();
     if (shouldAuthorizationBeTested) {
       const result = await getTokenAndUserId(unauthorizedRequest);
       commonHeaders['Authorization'] = result.token;
       mockUserId = result.mockUserId;
     }
-  });
+  }, 120_000);
 
   afterAll(async () => {
     if (mockUserId) {
@@ -46,6 +48,7 @@ describe('Article (e2e)', () => {
     if (commonHeaders['Authorization']) {
       delete commonHeaders['Authorization'];
     }
+    await stopE2eApp();
   });
 
   describe('GET', () => {

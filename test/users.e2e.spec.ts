@@ -1,6 +1,7 @@
 import { validate } from 'uuid';
 import { StatusCodes } from 'http-status-codes';
 import { request } from './lib';
+import { startE2eApp, stopE2eApp } from './lib/register-e2e-app';
 import {
   getTokenAndUserId,
   shouldAuthorizationBeTested,
@@ -22,12 +23,13 @@ describe('Users (e2e)', () => {
   let mockUserId: string | undefined;
 
   beforeAll(async () => {
+    await startE2eApp();
     if (shouldAuthorizationBeTested) {
       const result = await getTokenAndUserId(unauthorizedRequest);
       commonHeaders['Authorization'] = result.token;
       mockUserId = result.mockUserId;
     }
-  });
+  }, 120_000);
 
   afterAll(async () => {
     // delete mock user
@@ -38,6 +40,7 @@ describe('Users (e2e)', () => {
     if (commonHeaders['Authorization']) {
       delete commonHeaders['Authorization'];
     }
+    await stopE2eApp();
   });
 
   describe('GET', () => {
