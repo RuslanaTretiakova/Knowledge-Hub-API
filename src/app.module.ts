@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ThrottlerModule } from '@nestjs/throttler';
+import { AiModule } from './ai/ai.module';
 import { ArticleModule } from './article/article.module';
 import { AuthModule } from './auth/auth.module';
 import { CategoryModule } from './category/category.module';
@@ -16,6 +17,7 @@ import { UserModule } from './user/user.module';
       },
     ]),
     PrismaModule,
+    AiModule,
     AuthModule,
     UserModule,
     CategoryModule,
