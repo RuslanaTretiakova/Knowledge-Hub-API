@@ -81,12 +81,8 @@ export class GeminiService {
 
         if (!response.ok) {
           let detail = 'Gemini API request failed';
-          try {
-            const errJson = await response.json();
-            if (errJson?.error?.message) detail = errJson.error.message;
-          } catch {
-            // body was not JSON
-          }
+          const errJson = await response.json().catch(() => null);
+          if (errJson?.error?.message) detail = errJson.error.message;
           throw new ServiceUnavailableException(detail);
         }
 

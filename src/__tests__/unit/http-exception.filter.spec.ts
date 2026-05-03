@@ -12,7 +12,10 @@ import { HttpExceptionFilter } from '../../common/filters/http-exception.filter'
 const createContext = () => {
   const mockJson = vi.fn();
   const mockStatus = vi.fn().mockReturnValue({ json: mockJson });
-  const mockGetResponse = vi.fn().mockReturnValue({ status: mockStatus });
+  const mockSetHeader = vi.fn();
+  const mockGetResponse = vi
+    .fn()
+    .mockReturnValue({ status: mockStatus, setHeader: mockSetHeader });
   const mockGetRequest = vi
     .fn()
     .mockReturnValue({ url: '/test', method: 'GET' });
@@ -26,6 +29,7 @@ const createContext = () => {
     },
     mockStatus,
     mockJson,
+    mockSetHeader,
   };
 };
 
@@ -119,6 +123,18 @@ describe('HttpExceptionFilter', () => {
         message: 'not allowed',
       }),
     );
+  });
+
+  it('should set Retry-After on 429 with retryAfter payload', () => {
+    const { context, mockSetHeader, mockStatus } = createContext();
+    const exception = new HttpException(
+      { message: 'Too many', retryAfter: 45 },
+      HttpStatus.TOO_MANY_REQUESTS,
+    );
+    filter.catch(exception, context as any);
+
+    expect(mockSetHeader).toHaveBeenCalledWith('Retry-After', '45');
+    expect(mockStatus).toHaveBeenCalledWith(HttpStatus.TOO_MANY_REQUESTS);
   });
 
   it('should handle ForbiddenError', () => {

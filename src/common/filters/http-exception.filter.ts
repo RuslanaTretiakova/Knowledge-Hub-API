@@ -33,6 +33,15 @@ export class HttpExceptionFilter implements ExceptionFilter {
       if (typeof res === 'string') {
         message = res;
       } else if (typeof res === 'object' && res !== null) {
+        if (
+          statusCode === HttpStatus.TOO_MANY_REQUESTS &&
+          'retryAfter' in (res as object)
+        ) {
+          response.setHeader(
+            'Retry-After',
+            String((res as { retryAfter: number }).retryAfter),
+          );
+        }
         const responseMessage = (res as any).message;
         if (Array.isArray(responseMessage)) {
           message = responseMessage.join(', ');
@@ -84,6 +93,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
       404: 'Not Found',
       409: 'Conflict',
       422: 'Unprocessable Entity',
+      429: 'Too Many Requests',
       500: 'Internal Server Error',
     };
     return map[statusCode] ?? 'Error';
