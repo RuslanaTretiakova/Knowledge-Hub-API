@@ -1,6 +1,7 @@
 import { validate } from 'uuid';
 import { StatusCodes } from 'http-status-codes';
 import { request } from './lib';
+import { startE2eApp, stopE2eApp } from './lib/register-e2e-app';
 import {
   getTokenAndUserId,
   shouldAuthorizationBeTested,
@@ -18,6 +19,7 @@ describe('Comments (e2e)', () => {
   let testArticleId: string;
 
   beforeAll(async () => {
+    await startE2eApp();
     if (shouldAuthorizationBeTested) {
       const result = await getTokenAndUserId(unauthorizedRequest);
       commonHeaders['Authorization'] = result.token;
@@ -39,7 +41,7 @@ describe('Comments (e2e)', () => {
 
     expect(createArticleResponse.status).toBe(StatusCodes.CREATED);
     testArticleId = createArticleResponse.body.id;
-  });
+  }, 120_000);
 
   afterAll(async () => {
     // Cleanup test article
@@ -56,6 +58,7 @@ describe('Comments (e2e)', () => {
     if (commonHeaders['Authorization']) {
       delete commonHeaders['Authorization'];
     }
+    await stopE2eApp();
   });
 
   describe('GET', () => {
@@ -172,9 +175,15 @@ describe('Comments (e2e)', () => {
       expect(hasComment2).toBe(false);
 
       // Cleanup
-      await unauthorizedRequest.delete(commentsRoutes.delete(comment1Id)).set(commonHeaders);
-      await unauthorizedRequest.delete(commentsRoutes.delete(comment2Id)).set(commonHeaders);
-      await unauthorizedRequest.delete(articlesRoutes.delete(anotherArticleId)).set(commonHeaders);
+      await unauthorizedRequest
+        .delete(commentsRoutes.delete(comment1Id))
+        .set(commonHeaders);
+      await unauthorizedRequest
+        .delete(commentsRoutes.delete(comment2Id))
+        .set(commonHeaders);
+      await unauthorizedRequest
+        .delete(articlesRoutes.delete(anotherArticleId))
+        .set(commonHeaders);
     });
   });
 
