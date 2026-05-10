@@ -17,9 +17,7 @@ export function loadRagSettings(): RagSettings {
     parseInt(process.env.RAG_CHUNK_OVERLAP ?? '200', 10),
   );
   if (chunkOverlap >= chunkSize) {
-    throw new Error(
-      'RAG_CHUNK_OVERLAP must be less than RAG_CHUNK_SIZE',
-    );
+    throw new Error('RAG_CHUNK_OVERLAP must be less than RAG_CHUNK_SIZE');
   }
 
   return {

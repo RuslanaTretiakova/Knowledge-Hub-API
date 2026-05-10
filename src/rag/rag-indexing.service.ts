@@ -65,11 +65,7 @@ export class RagIndexingService {
 
     for (const article of articles) {
       const body = `${article.title}\n\n${article.content}`;
-      const chunks = chunkText(
-        body,
-        settings.chunkSize,
-        settings.chunkOverlap,
-      );
+      const chunks = chunkText(body, settings.chunkSize, settings.chunkOverlap);
       if (!chunks.length) {
         continue;
       }

@@ -1,4 +1,8 @@
-import { Injectable, Logger, ServiceUnavailableException } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  ServiceUnavailableException,
+} from '@nestjs/common';
 import { QdrantClient } from '@qdrant/js-client-rest';
 import type { Schemas } from '@qdrant/js-client-rest';
 import { loadRagSettings } from './rag-settings';
@@ -101,9 +105,7 @@ export class QdrantService {
     }
   }
 
-  async upsertPoints(
-    points: Schemas['PointStruct'][],
-  ): Promise<void> {
+  async upsertPoints(points: Schemas['PointStruct'][]): Promise<void> {
     if (!points.length) return;
     try {
       await this.client.upsert(this.collection, { wait: true, points });
