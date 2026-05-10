@@ -6,7 +6,6 @@ const createUserDto = {
 };
 
 const getTokenAndUserId = async (request) => {
-  // create user
   const {
     body: { id: mockUserId },
   } = await request
@@ -14,7 +13,6 @@ const getTokenAndUserId = async (request) => {
     .set('Accept', 'application/json')
     .send(createUserDto);
 
-  // get token
   const {
     body: { accessToken, refreshToken },
   } = await request
