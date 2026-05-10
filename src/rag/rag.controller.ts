@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Delete,
+  Get,
   HttpCode,
   NotFoundException,
   Param,
@@ -19,9 +20,12 @@ import { AiRateLimitGuard } from '../ai/ai-rate-limit.guard';
 import { SkipAiRateLimit } from '../ai/decorators/skip-ai-rate-limit.decorator';
 import { RagIndexingService } from './rag-indexing.service';
 import { RagRetrievalService } from './rag-retrieval.service';
+import { RagChatService } from './rag-chat.service';
+import { RagConversationStore } from './rag-conversation.store';
 import { QdrantService } from './qdrant.service';
 import { ReindexRequestDto } from './dto/reindex.dto';
 import { RagSearchRequestDto } from './dto/rag-search.dto';
+import { RagChatRequestDto } from './dto/rag-chat.dto';
 
 @ApiTags('Rag')
 @ApiBearerAuth()
@@ -31,6 +35,8 @@ export class RagController {
   constructor(
     private readonly indexing: RagIndexingService,
     private readonly retrieval: RagRetrievalService,
+    private readonly chat: RagChatService,
+    private readonly conversations: RagConversationStore,
     private readonly qdrant: QdrantService,
   ) {}
 
@@ -61,6 +67,31 @@ export class RagController {
       tags: dto.tags,
     });
     return { results };
+  }
+
+  @Post('chat')
+  @ApiOperation({ summary: 'RAG chat grounded in indexed articles' })
+  @ApiResponse({ status: 200 })
+  @ApiResponse({ status: 400 })
+  @ApiResponse({ status: 503, description: 'Vector DB or Gemini unavailable' })
+  async ragChat(@Body() dto: RagChatRequestDto) {
+    return this.chat.chat({
+      question: dto.question,
+      conversationId: dto.conversationId,
+    });
+  }
+
+  @Get('chat/:conversationId/history')
+  @SkipAiRateLimit()
+  @ApiOperation({ summary: 'List messages for a RAG conversation' })
+  @ApiResponse({ status: 200 })
+  @ApiResponse({ status: 404 })
+  history(@Param('conversationId', ParseUuidPipe) conversationId: string) {
+    const messages = this.conversations.getHistory(conversationId);
+    if (!messages) {
+      throw new NotFoundException(`Conversation ${conversationId} not found`);
+    }
+    return { conversationId, messages };
   }
 
   @Delete('index/articles/:articleId')
