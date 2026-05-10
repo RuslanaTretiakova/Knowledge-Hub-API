@@ -115,4 +115,35 @@ describe('GeminiService', () => {
       ServiceUnavailableException,
     );
   });
+
+  it('embedTexts posts batchEmbedContents with model and requests', async () => {
+    fetchMock.mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({
+        embeddings: [{ values: [0.1, 0.2] }, { values: [0.3, 0.4] }],
+      }),
+    });
+
+    const svc = new GeminiService();
+    const out = await svc.embedTexts(['a', 'b']);
+
+    expect(out).toEqual([
+      [0.1, 0.2],
+      [0.3, 0.4],
+    ]);
+    const [, init] = fetchMock.mock.calls[0];
+    const body = JSON.parse(String((init as { body: string }).body));
+    expect(body.model).toBe('models/text-embedding-004');
+    expect(body.requests).toHaveLength(2);
+    expect(body.requests[0].model).toBe('models/text-embedding-004');
+  });
+
+  it('embedTexts throws when API key is missing', async () => {
+    delete process.env.GEMINI_API_KEY;
+    const svc = new GeminiService();
+    await expect(svc.embedTexts(['x'])).rejects.toThrow(
+      InternalServerErrorException,
+    );
+  });
 });

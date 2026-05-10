@@ -19,5 +19,6 @@ import { GeminiService } from './gemini.service';
     AiArticlesService,
     AiRateLimitGuard,
   ],
+  exports: [GeminiService, AiRateLimitGuard],
 })
 export class AiModule {}
